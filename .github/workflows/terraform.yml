@@ -1,0 +1,38 @@
+name: Terraform
+
+on:
+  pull_request:
+    paths:
+      - "terraform/**"
+      - ".github/workflows/terraform.yml"
+  push:
+    branches: [main]
+    paths:
+      - "terraform/**"
+      - ".github/workflows/terraform.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: terraform
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - name: Format
+        run: terraform fmt -check -recursive
+      - name: Init
+        run: terraform init -backend=false
+      - name: Validate
+        run: terraform validate
+      - name: Trivy IaC
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: config
+          scan-ref: terraform/
+          severity: CRITICAL,HIGH
+          exit-code: "1"
